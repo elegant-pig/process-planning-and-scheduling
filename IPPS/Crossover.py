@@ -10,9 +10,9 @@ import calculate
 import generateOperation
 import init
 import selection
-from check_code import check_adjust_workstation, check_wk_ma, check_adjust_employ, check_employ_code, \
+from check_code import check_adjust_workstation, check_wk_ma, check_adjust_employ, \
     check_result_employ_allocation, check_wk_ma2
-from generateBalance import index_calculation
+from generateBalance import  generate_new_balance
 
 file_path = 'data/operation_data.xlsx'
 operation_data = pd.read_excel(file_path, sheet_name='final')
@@ -31,14 +31,35 @@ def crossover_choose_parent(elite_individuals):
         # 随机选择两个父代
         # P1, P2 = random.sample(elite_individuals, 2)
 
-        # P1选择最优秀的个体
-        P1=elite_individuals[0]
-        elite_individuals.remove(P1)
+        # # P1选择最优秀的个体
+        # P1=elite_individuals[0]
+        # print(f"P1!!!!!!!!!!!!!")
+        # check_adjust_employ(P1['individual']['employ_code'], 23)
+        # elite_individuals.remove(P1)
         # P2采用轮盘赌选择个体
-        P2= selection.roulette_wheel_selection(elite_individuals, 1)
+        # P2= selection.roulette_wheel_selection(elite_individuals, 1)
+        select_child=selection.roulette_wheel_selection(elite_individuals, 2)
         # print(P2)
 
-        child1,child2=crossover(P1,P2[0])
+        # child1,child2=crossover(P1,P2[0])
+        child1,child2=crossover(select_child[0],select_child[1])
+
+        # print(f"5555555555555555555")
+        # print(f"检查检查{child1['individual']['workstation_code']}")
+        # check_adjust_workstation(child1['individual']['workstation_code'], 23)
+        # # check_adjust_workstation(child2['individual']['workstation_code'], 23)
+        # # print(f"负责检查交叉后的编码有没有问题")
+        # print(f"检查检查{child1['individual']['result_employ_allocation']}")
+        # check_result_employ_allocation(child1['individual']['result_employ_allocation'], 23)
+        # # check_result_employ_allocation(child2['individual']['result_employ_allocation'], 23)
+        # print(f"检查检查{child1['individual']['employ_code']}")
+        # check_adjust_employ(child1['individual']['employ_code'], 23)
+        # # check_adjust_employ(child2['individual']['employ_code'], 23)
+        # print(f"检查检查{child1['individual']['workstation_machines']}")
+        # check_wk_ma(child1['individual']['workstation_machines'], 23)
+        # # check_wk_ma(child2['individual']['workstation_machines'], 23)
+        # print(f"结束了！！！！！")
+
         Child.append(child1)
         Child.append(child2)
         # 在轮盘赌的时候就已经删除了
@@ -51,19 +72,9 @@ def crossover_choose_parent(elite_individuals):
     #     child1, child2 = crossover(old_best_individul, last_individual)
     #     Child.append(child1)
     #     Child.append(child2)
-    print(f"一共几个子代{len(Child)}")
-    print(f"5555555555555555555")
-    print(f"交叉后的子代为{Child}")
-    print(f"子代个数{len(Child)}")
-    for idx,child in enumerate(Child):
-        print(f"{idx}-{idx}-{idx}")
-        print(f"当前的child是{child}")
-        print(child['individual']['workstation_code'])
-        print(f"检查子代中的")
-        # check_adjust_workstation(child['individual']['workstation_code'],23)
-        # check_adjust_employ(child['individual']['employ_code'],23)
-        # check_result_employ_allocation(child['individual']['result_employ_allocation'],23)
-        # check_wk_ma(child['individual']['workstation_machines'],23)
+    # print(f"一共几个子代{len(Child)}")
+
+
 
     return Child,old_best_individul
 
@@ -98,14 +109,19 @@ def crossover(P1,P2):
     C2['individual']['replace_op']=P2['individual']['replace_op']
     C2['individual']['workstation_machines']=P2['individual']['workstation_machines']
     C2['individual']['result_employ_allocation']=P2['individual']['result_employ_allocation']
-    print(f"888888")
-    print(C1['individual']['result_employ_allocation'])
-    print(C2['individual']['result_employ_allocation'])
+    # print(f"888888")
+    # print(C1['individual']['result_employ_allocation'])
+    # print(C2['individual']['result_employ_allocation'])
+    # print(f"负责检查继承自P1和P2的编码有没有问题")
+    # check_result_employ_allocation(C1['individual']['result_employ_allocation'],23)
+    # check_result_employ_allocation(C2['individual']['result_employ_allocation'],23)
 
 
     C1,C2=crossover_OR_FMX_ONE_POINT(P1,P2,C1,C2)
     # C1,C2=adjust_op(C1,C2,replace_op)
     C1,C2=crossover_other_FMX_two_point(P1,P2,C1,C2)
+
+
 
     # 调整不符合约束的编码,单个编码调整
     C1=adjust_individual(C1,data)
@@ -440,8 +456,10 @@ def adjust_op(Child,data):
 #     # print("--------------------------------")
 
 def adjust_employ(child):
-    # print(f"交叉后的员工编码")
+    check_adjust_workstation(child['individual']['workstation_code'],23)
+    print(f"交叉后的员工编码")
     # print(child['individual']['result_employ_allocation'])
+    print(child['individual']['workstation_code'])
 
     for i,wk in enumerate(child['individual']['workstation_code']):
         current_workstation = child['individual']['workstation_code'][i]
@@ -452,15 +470,13 @@ def adjust_employ(child):
             # print(f"该工序分配给多个工作站")
             for j in range(len(tem_employ)):
                 current_workstation=child['individual']['workstation_code'][i][j]
-                if tem_employ[j]['id']:
-                    current_employ=tem_employ[j]['id']
+                if tem_employ[j]['employ']:
+                    current_employ=tem_employ[j]['employ']
                 else:
                     print(f"这个工作站是新分配上去的，需要补充员工")
-
-
                 # 查找 result_employ_allocation 中匹配的工作站数据
                 allocation = next((item for item in child['individual']['result_employ_allocation'] if item['workstation'] == current_workstation), None)
-
+                print(f"allocation{allocation}")
                 if allocation:
                     # 获取 result_employ_allocation 中该工作站的正确员工编号
                     correct_employ = allocation['employ']
@@ -469,19 +485,19 @@ def adjust_employ(child):
                     # 如果员工编号不匹配，修改 employ_code 数据
                     if current_employ != correct_employ:
 
-                        child['individual']['employ_code'][i][j]['id'] = correct_employ
+                        child['individual']['employ_code'][i][j]['employ'] = correct_employ
 
                 else:
-                    # print(f"未找到工作站 {wk} 的分配数据，跳过处理。")
+                    # print(f"")
+                    print(f"未找到工作站 {wk} 的分配数据，跳过处理。")
                     continue
 
         else:
             # print(f"该工序只分配给1个工作站")
-            current_employ=tem_employ[0]['id']
+            current_employ=tem_employ[0]['employ']
             # 查找 result_employ_allocation 中匹配的工作站数据
-            allocation = next((item for item in child['individual']['result_employ_allocation'] if
-                               item['workstation'] == current_workstation), None)
-
+            allocation = next((item for item in child['individual']['result_employ_allocation'] if item['workstation'] == current_workstation), None)
+            print(f"allocation{allocation}")
             if allocation:
                 # 获取 result_employ_allocation 中该工作站的正确员工编号
                 correct_employ = allocation['employ']
@@ -497,120 +513,98 @@ def adjust_employ(child):
 
 def adjust_employ_code(individual):
     print(f"482482")
-    workstation_code = individual['individual']['workstation_code']
+    print(f"individual{individual}")
+    check_adjust_workstation(individual['individual']['workstation_code'],23)
+    # workstation_code = individual['individual']['workstation_code']
     # employ_code = individual['individual']['employ_code']
     result_employ_allocation = individual['individual']['result_employ_allocation']
-    print(f"当前的result_employ_allocation is:{result_employ_allocation}")
     check_result_employ_allocation(result_employ_allocation,23)
+    # print(f"当前的result_employ_allocation is:{result_employ_allocation}")
+    # check_result_employ_allocation(result_employ_allocation,23)
     # 将 result_employ_allocation 处理成字典 {workstation: employ}
-    employ_mapping = {entry['workstation']: entry['employ'] for entry in result_employ_allocation}
+    # employ_mapping = {entry['workstation']: entry['employ'] for entry in result_employ_allocation}
 
-    print(f"employ_mapping{employ_mapping}")
-    if not employ_mapping:
-        print(f"这个值为空")
-
-    # for idx, (emp_list, workstations) in enumerate(zip(individual['individual']['employ_code'], workstation_code)):
-    #     print(f"emp_list{emp_list}")
-    #     print(f"workstations{workstations}")
-    #
-    #     for idx,emp in enumerate(zip(emp_list,workstations)):
-    #         print(f"496496")
-    #         print(f"emp{emp}")
-    #         # 如果工作站匹配的话
-    #         if emp[0]['workstation'] == emp[1]:
-    #             print(f"499499")
-    #             # 工作站跟员工都匹配的话
-    #             if emp[0]['workstation'] in employ_mapping and employ_mapping[emp[0]['workstation']] == emp[0]['id']:
-    #                 # print(emp)
-    #                 # print(employ_mapping)
-    #                 # # print(emp[0]['workstation'])
-    #                 # print(employ_mapping[emp[0]['workstation']])
-    #                 # # print(emp[0]['id'])
-    #                 print(f"配对成功")
-    #                 # continue
-    #             else:
-    #                 # 工作站匹配但是员工号不匹配
-    #                 print(f"504504")
-    #                 print(f"当前员工编号{emp[0]['id']}")
-    #                 print(f"当前工作站编码{emp[0]['workstation']}")
-    #                 print(f"employ_mapping{employ_mapping}")
-    #                 emp[0]['id'] = employ_mapping.get(emp[0]['workstation'], emp[0]['id'])  # 如果找不到，就保留原来的 id
-    #                 print(f"修改后的员工编号为{emp[0]['id']}")
-    #         elif emp[0]['workstation'] != emp[1]:
-    #             # 如果工作站不匹配的话
-    #             print(f"当前员工编号{emp[0]['id']}")
-    #             print(f"当前工作站编码{emp[0]['workstation']}")
-    #             print(f"507507")
-    #             emp[0]['workstation']=emp[1]
-    #             print(f"修改后的工作站是{emp[0]['workstation']}")
-    #             # emp[0]['id'] = employ_mapping.get(emp[0]['workstation'], emp[0]['id'])  # 如果找不到，就保留原来的 id
-    #             emp[0]['id'] = employ_mapping[emp[0]['workstation']]  # 直接索引，KeyError 自动抛出
-    #             print(f"修改后的员工编号是{emp[0]['id']}")
-    #         else:
-    #             # 说明少了，需要补充
-    #             print(f"509509")
-    #             print(f"emp0{emp[0]}")
-    #             print(f"emp1{emp[1]}")
-
-    for i,wk_list in enumerate(workstation_code):
+    # 使用字典来存储每个 workstation 最后的 employ 值
+    employ_mapping = {}
+    unique_entries1=set()
+    # 这里有问题
+    for entry in result_employ_allocation:
+        workstation_code=entry['workstation']
+        employ=employ = entry['employ']
+        entry_tuple = (entry['workstation'], entry['employ'])
+        if entry_tuple not in unique_entries1:
+            unique_entries1.add(entry_tuple)
+            employ_mapping[workstation_code]=employ
+    print(f"111employ_mapping{employ_mapping}")
+    print(f"workstation_code{individual['individual']['workstation_code']}")
+    for i,wk_list in enumerate(individual['individual']['workstation_code']):
+        # print(f"workstation_code{individual['individual']['workstation_code']}")
         print(f"wk_list{wk_list}")
-        for j,wk in enumerate(wk_list):
-            print(f"535535")
-            print(f"当前编号{j}")
-            print(f"当前工作站{wk}")
-            print(f"当前该位置员工编码的长度{len(individual['individual']['employ_code'][i])}")
+        wk_len=len(wk_list)
+        employ_len=len(individual['individual']['employ_code'][i])
+        print(f"wk_len{wk_len}")
+        print(f"employ_len{employ_len}")
+        print(f"需要补充：")
+        print(wk_len - employ_len)
+        # 修改长度
+        if wk_len>employ_len:
+            print(f"修改长度，增加")
+            # 说明employ_code这个位置需要补充的
+            individual['individual']['employ_code'][i].extend([{'workstation': '', 'employ': ''}] * (wk_len - employ_len))
             print(individual['individual']['employ_code'][i])
-            if j+1 > len(individual['individual']['employ_code'][i]):
-                print(f"544544")
-                # 说明employ_code有缺失
-                # 即有工作站遗漏了
+        elif wk_len<employ_len:
+            print(f"修改长度，减少")
+            individual['individual']['employ_code'][i] = individual['individual']['employ_code'][i][:wk_len]
+            print(individual['individual']['employ_code'][i])
+
+        for j,wk in enumerate(wk_list):
+            print(f"开始遍历")
+            print(wk)
+            print(individual['individual']['employ_code'][i][j])
+            if wk == individual['individual']['employ_code'][i][j]['workstation']:
+                print(f"557557")
+                # 如果员工编号也对上的话
+                if wk in employ_mapping and employ_mapping[wk] == individual['individual']['employ_code'][i][j]['employ']:
+                    print(f"*******111111")
+                    print(f"查找wk对应的员工{employ_mapping[wk]}")
+                    print(f"当前编码对应的员工{individual['individual']['employ_code'][i][j]['employ']}")
+                    print(f'配对成功')
+                else:
+                    # print(f"+++++++++")
+                    print(f"*******111222")
+
+                    print(f"查找wk对应的员工{employ_mapping[wk]}")
+                    print(f"当前编码对应的员工{individual['individual']['employ_code'][i][j]['employ']}")
+                    individual['individual']['employ_code'][i][j]['employ'] = employ_mapping[wk]
+                    print(individual['individual']['employ_code'][i][j])
+                    print(f"564564")
+            else:
+                print(f"*******222222")
+                print(f'当前编码的工作站错误')
+                print(f"563563")
+                # print(f"查找wk对应的员工{employ_mapping[wk]}")
+                # print(f"当前编码对应的员工{individual['individual']['employ_code'][i][j]['employ']}")
+                print(f"workstation_code中的工作站是{wk}")
+                print(f"当前employ_code编码的工作站是{individual['individual']['employ_code'][i][j]['workstation']}")
+                # 说明工作站不匹配
                 current_wk = wk
                 current_employ = employ_mapping[wk]
-                individual['individual']['employ_code'][i].append({'workstation': current_wk, 'id': current_employ})
-                print(f"当前工序对应的员工编码")
+                individual['individual']['employ_code'][i][j] = {'workstation': current_wk, 'employ': current_employ}
+                print(f"当前工序对应的员工编码{employ_mapping[wk]}")
                 print(individual['individual']['employ_code'][i])
                 print(wk_list)
-            else:
-                if wk == individual['individual']['employ_code'][i][j]['workstation']:
-                    print(f"557557")
-                    # 如果员工编号也对上的话
-                    if wk in employ_mapping and employ_mapping[wk] == individual['individual']['employ_code'][i][j]['id']:
-                        print(f'配对成功')
-                    else:
-                        individual['individual']['employ_code'][i][j]['id']=employ_mapping[wk]
-                        print(f"564564")
-                else:
-                    print(f"563563")
-                    # 说明只是工作站不匹配
-                    current_wk = wk
-                    current_employ = employ_mapping[wk]
-                    individual['individual']['employ_code'][i][j] = {'workstation': current_wk, 'id': current_employ}
-                    print(f"当前工序对应的员工编码")
-                    print(individual['individual']['employ_code'][i])
-                    print(wk_list)
 
-
-    # check_employ_code(individual['individual']['workstation_code'],23)
-    # check_adjust_workstation(individual['individual']['workstation_code'],23)
-    # print(f"工作站编码数量没问题")
-    print(individual['individual']['workstation_code'])
-    print(individual['individual']['result_employ_allocation'])
-    print(f"604604")
-    print(individual['individual']['employ_code'])
+    print(f"workstation_code{individual['individual']['workstation_code']}")
+    print(f"employ_code{individual['individual']['employ_code']}")
+    print(f"222employ_mapping{employ_mapping}")
     check_adjust_employ(individual['individual']['employ_code'],23)
-    print(f"员工编码数量也没问题")
-
     return individual
 
 def adjust_individual(child,data):
     # 单个编码调整
     # 先调整or_code和op_code
     tem_data,right_operation_codes=adjust_op(child,data)
-    print(f"tem_data{tem_data}")
     current_operation_codes=child['individual']['operation_code'].copy()
-    # print("--------------------------")
-    # print(f"right_operation_codes{right_operation_codes}")
-    # print(f"C1_origin{current_operation_codes}")
 
     # 调整工序和机器编码
     # 如果去重后的工序编码跟正确的工序编码长度不一致，则有重复工序
@@ -727,38 +721,38 @@ def adjust_individual(child,data):
         child['individual']['operation_code']=current_operation_codes
 
     # 调整人力平衡
-    child=adjust_balance(child,tem_data)
-
-    # # 根据人力平衡调整工作站编码
-    # adjust_workstation_machine(child,23)
+    child=generate_new_balance(child,tem_data)
 
     # 根据人力平衡调整工作站编码
     child=adjust_workstation(child)
-    print(f"crossover")
-    print(f"adjust_workstation:{child['individual']['workstation_code']}")
+
     check_adjust_workstation(child['individual']['workstation_code'], 23)
-    check_wk_ma(child['individual']['workstation_machines'],23)
 
     # 调整员工编码
     # adjust_employ(child)
+
     child=adjust_employ_code(child)
-    check_adjust_employ(child['individual']['employ_code'],23)
+
 
     print("所有编码都调整好了")
+    check_adjust_workstation(child['individual']['workstation_code'], 23)
+    check_result_employ_allocation(child['individual']['result_employ_allocation'], 23)
+    check_adjust_employ(child['individual']['employ_code'], 23)
+    check_wk_ma(child['individual']['workstation_machines'], 23)
 
     return child
 
 def adjust_workstation(individual):
     print(f'608608')
     print(f"individual{individual}")
-    new_machine=individual['individual']['machine_code']
-    old_workstation_code=individual['individual']['workstation_code']
-    old_workstation_machine=individual['individual']['workstation_machines']
-    unique_need_machine=set(new_machine)
-    old_machine=set(old_workstation_machine.values())
+    new_machine=individual['individual']['machine_code'] #新的机器编码
     print(f"new_machine{new_machine}")
-
+    old_workstation_code=individual['individual']['workstation_code']  #旧的工作站编码
+    old_workstation_machine=individual['individual']['workstation_machines'] #旧的工作站：机器匹配编码
+    unique_need_machine=set(new_machine)
     print(f"unique_need_machine{unique_need_machine}")
+
+    old_machine=set(old_workstation_machine.values())
     print(f"old_machine{old_machine}")
 
     print(f"old_workstation_code{old_workstation_code}")
@@ -766,13 +760,14 @@ def adjust_workstation(individual):
 
     new_has_old_hasnt=unique_need_machine-old_machine
     old_has_new_hasnt=old_machine-unique_need_machine
+
     # 如果新编码需要的机器跟旧的一样的话
     if unique_need_machine==old_machine:
         print(f"11111")
         print(f"说明新旧编码需要的机器都一致")
         print(f"new_has_old_hasnt{new_has_old_hasnt}")
         print(f"old_has_new_hasnt{old_has_new_hasnt}")
-        # 但是不能保证工作站分配没问题哦！但是无需调整machines_workstations
+        # 但是不能保证工作站分配没问题哦！但是无需调整machines_workstations,因为需要的机器跟原来一样，说明工作站：机器匹配正确
 
         machines_to_workstations = defaultdict(list)
         # 遍历原字典，将键值对翻转
@@ -783,6 +778,7 @@ def adjust_workstation(individual):
         # 将 defaultdict 转换为普通字典（可选）
         machines_to_workstations = dict(machines_to_workstations)
         print(f"eeeeeeeeeeeeee")
+        # print()
         individual=choose_workstation(individual,machines_to_workstations)
     else:
         print(f"22222")
@@ -817,6 +813,8 @@ def adjust_workstation(individual):
                 # 说明旧的编码有新的编码没有的机器,即新编码和旧编码有交集,删除旧的，添加新的
                 print(f"说明旧的编码有新的编码没有的机器")
                 print(f"old_has_new_hasnt{old_has_new_hasnt}")
+                print(f"1111****************")
+                print(f"machines_to_workstations{machines_to_workstations}")
                 for wk in new_has_old_hasnt:
                     machines_to_workstations[wk]=[]
                 new_value=[]
@@ -825,8 +823,10 @@ def adjust_workstation(individual):
                         new_value.extend(machines_to_workstations[key])
                 for key in old_has_new_hasnt:
                     machines_to_workstations.pop(key,None)
-                empty_keys=[k for k, v in machines_to_workstations.items() if not v]
+                empty_keys=[k for k, v in machines_to_workstations.items() if not v] #如果键对应的值是None或者是空列表，就取出来
                 # sorted(machines_workstations.keys(), key=lambda k: len(machines_workstations[k]))
+                print(f"2222****************")
+                print(f"machines_to_workstations{machines_to_workstations}")
                 # 2. 逐个分配 new_value
                 for workstation in new_value:
                     if empty_keys:
@@ -836,10 +836,6 @@ def adjust_workstation(individual):
                     machines_to_workstations[key].append(workstation)  # 进行分配
                 print(f"bbbbbbbbbbbbb")
                 individual,machines_to_workstations=adjust_machines_workstations_code(individual, machines_to_workstations)
-                # print(f"863863")
-                # print(f"machines_to_workstations{machines_to_workstations}")
-                # check_wk_ma2(machines_to_workstations, 23)
-
                 individual=choose_workstation(individual, machines_to_workstations)
         else:
             print(f"22222！22222")
@@ -869,94 +865,53 @@ def adjust_workstation(individual):
             print(f"aaaaaaaaaaa")
             # 调整workstations_machines值以进行下一部调整工作站，但是调整完之后的workstation_machines还需要修改
             individual,machines_to_workstations= adjust_machines_workstations_code(individual, machines_to_workstations)
-            # print(f"863863")
-            # print(f"machines_to_workstations{machines_to_workstations}")
-            # check_wk_ma2(machines_to_workstations, 23)
             individual=choose_workstation(individual, machines_to_workstations)
-
+    check_adjust_workstation(individual['individual']['workstation_code'],23)
+    check_wk_ma(individual['individual']['workstation_machines'],23)
     return individual
 
-def adjust_balance(individual,data):
-    balance_codes = []
-    unique_len=len({tuple(sorted(item)) for item in individual['individual']['workstation_code']})
 
-    # tem_data = data[['工序', '标准工时','机器']]
-    # data=data[['工序', '标准工时','机器']]
-    tem_data = index_calculation(data, unique_len)
-    total_balance = 0  # 用于计算总的人力平衡
-    for op in individual['individual']['operation_code']:
-        print(f"854854")
-        op_num=int(op.split(',')[1])
-        print(f"op_num{op_num}")
-
-        try:
-            tem_balance = tem_data[tem_data['工序'] == op_num]['人力平衡'].values[0]
-
-            decimal_part = tem_balance - int(tem_balance)
-            if decimal_part <= 0.3:
-                tem_balance = int(tem_balance)
-            else:
-                tem_balance = int(tem_balance) + 1  # 向上取整
-            if tem_balance == 0:
-                tem_balance = 1
-
-            # # 创建操作编码与机器编码的映射关系
-            # constraint.append(f"{code}->{machine}->{tem_balance}")
-            balance_codes.append(tem_balance)
-            # 计算总平衡值
-            total_balance += tem_balance
-            # print(f"total_balance{total_balance}")
-            # print(f"constraint{constraint}")
-        except IndexError:
-            print(f"当前code没有这个工序，跳过")
-            continue
-    if total_balance < unique_len:
-        print("!!!!!!!!!!!!!!!!wrong")
-
-        # balance_layer.append(f"{code} -> {balance}")
-        # balance_codes.append(constraint)
-        # print(balance_codes)
-    individual['individual']['balance_code']=balance_codes
-    return  individual
 
 def adjust_machines_workstations_code(individual,machines_workstations):
+    # 这里有问题！！！！！！！！！！！！！！ workstation_code不对的话就是这里有问题
+    print(f"952952")
+    print(f"machines_workstations{machines_workstations}")
+    tem_give_wk=[] #这是可以分一部分工作站出去的机器
+    tem_need_wk=[] #这是要补一部分工作站进来的机器
     # 调整machines_workstations这个编码，这个编码原来是直接继承了父代的，里面的机器不一定对，但是工作站的数量和值应该是没问题的
     # 根据balance_code进行调整，少的补，但是多的不减
-    balance=individual['individual']['balance_code']
+    old_balance=individual['individual']['balance_code']
     machine=individual['individual']['machine_code']
     tem_workstation_machines = {}  # 存储更新后的工作站-机器映射
-    # print(f"663663")
-    # print(individual['individual']['workstation_code'])
 
     # 创建一个字典来存储 machine 对应的 balance 之和
     balance_sum = defaultdict(int)
     # 遍历 machine 和 balance，累加对应 machine 的 balance 值
     # 这是调整后的编码新的人力平衡（新的），‘机器’：数量
-    for m, b in zip(machine, balance):
+    for m, b in zip(machine, old_balance):
         balance_sum[m] += b
-    # print(f"balance_sum")
+    print(f"balance_sum")
     # print(dict(balance_sum))
 
     # 这是旧的人力平衡的编码，将其变成‘机器’：数量的方式
     machine_lengths={key: sum(1 for item in value if item) for key, value in machines_workstations.items()}
     # print(f"machine_lengths{machine_lengths}")
-    # 找出‘值’不相等的键
+    # 找出‘值’不相等的键  Eg:{'B': (3, 4), 'D': (2, 1)}前面的是需要的，后面是现有的
     differences = {key: (balance_sum[key], machine_lengths[key]) for key in balance_sum if balance_sum.get(key) != machine_lengths.get(key)}
-    # print(f"differences{differences}")
-    tem_give_wk=[] #这是可以分一部分出去的机器
-    tem_need_wk=[] #这是要补一部分进来的机器
+    print(f"differences{differences}")
+
     for key,value in differences.items():
-        # print(f"key{key}")
-        # print(f"value{value}")
+        print(f"key{key}")
+        print(f"value{value}")
         # 如果现有的比需要的多
         if value[1]>value[0]:
             tem_b=value[1]-value[0]
-            tem_give_wk.append({key:tem_b})
+            tem_give_wk.append({key:tem_b}) #机器:可以给出去的数量
         elif value[1]<value[0]: #如果现有的比需要的少
             tem_b = value[0] - value[1]
-            tem_need_wk.append({key:tem_b})
-    # print(f"tem_give_wk{tem_give_wk}")
-    # print(f"tem_need_wk{tem_need_wk}")
+            tem_need_wk.append({key:tem_b}) #机器:需要的数量
+    print(f"tem_give_wk{tem_give_wk}")
+    print(f"tem_need_wk{tem_need_wk}")
 
     # 如果需要补充的机器存在的话
     if tem_need_wk:
@@ -964,52 +919,77 @@ def adjust_machines_workstations_code(individual,machines_workstations):
         for dictionary in tem_need_wk:
             for key ,value in dictionary.items():
                 # print(f"742742")
-                print(key)
-                print(value)
-                # 遍历这些机器
+                print(f"key{key}")
+                print(f"value{value}")
+                # 循环添加机器，
                 for i in range(int(value)):
+                    print(f"tem_give_wk{tem_give_wk}")
                     # 随机从可以提供的机器中补充，按照需要补充的次数遍历
-                    selected_item=random.choice(tem_give_wk)
-                    # 修改selected_item
-                    # 在这里修改工作站！！！
-                    for key1,value1 in selected_item.items():
+                    if tem_give_wk:
+                        selected_item=random.choice(tem_give_wk)
+                        # 修改selected_item
                         # 在这里修改工作站！！！
-                        # 在这个机器分配的工作站中选择一个工作站
-                        select_wk=random.choice(machines_workstations[key1])
-                        # 将选择的工作站赋给新的机器
-                        machines_workstations[key].append(select_wk)
-                        # 将这个原来工作站所在的机器的位置中删掉
-                        machines_workstations[key1].remove(select_wk)
-                        new_value=int(value1) - 1
-                        # 将这个补充出去的机器先从原来的集合删除，修改它的可以供给的值，即减1，之后再放进去
-                        tem_give_wk.remove(selected_item)
-                        tem_give_wk.append({key1:new_value})
-                        # print(f'816816修改后的tem_give_wk{tem_give_wk}')
-                        # 如果它的值小于等于0，说明它没有可供给的，那就
-                        if new_value<=0:
-                            tem_give_wk = [item for item in tem_give_wk if item != {key1:new_value}]
-    #                 print(f'763763')
-    #                 print(f"tem_give_wk{tem_give_wk}")
-    # print(f"774774")
-    # print(f"machines_workstations{machines_workstations}")
+                        for key1, value1 in selected_item.items():
+                            # key1是机器，value1是它对应的工作站
+                            # 在这里修改工作站！！！
+                            # 在这个机器分配的工作站中选择一个工作站
+                            select_wk = random.choice(machines_workstations[key1])
+                            # 将选择的工作站赋给新的机器
+                            machines_workstations[key].append(select_wk)
+                            # 将这个原来工作站所在的机器的位置中删掉
+                            machines_workstations[key1].remove(select_wk)
+                            new_value = int(value1) - 1
+                            # 将这个补充出去的机器先从原来的集合删除，修改它的可以供给的值，即减1，之后再放进去
+                            tem_give_wk.remove(selected_item)
+                            tem_give_wk.append({key1: new_value})
+                            print(f'816816修改后的tem_give_wk{tem_give_wk}')
+                            # 如果它的值小于等于0，说明它没有可供给的，那就
+                            if new_value <= 0:
+                                tem_give_wk = [item for item in tem_give_wk if item != {key1: new_value}]
+                            # if tem_give_wk:
+                            #     continue
+                            # else:
+                            #     break
+                    else:
+                        # 随机选择一个策略 0表示不添加了，之后过，1表示从别的工作站中拿一个过来
+                        strategy=random.choice([0, 1])
+                        has_empty = any(len(v) == 0 for v in machines_workstations.values())
+                        max_key = max(machines_workstations, key=lambda k: len(machines_workstations[k]))
+                        max_value = machines_workstations[max_key]
+                        if has_empty:
+                            # 必须从别的工作站中取出一个
+                            c_wk=random.choice(max_value)
+                            machines_workstations[key].append(c_wk) #添加到这个机器中
+                            machines_workstations[max_key].remove(c_wk) #从原来的机器中删除
+                        else:
+                            if strategy==0:
+                                print(f"不做更改")
+                            elif strategy==1:
+                                c_wk = random.choice(max_value)
+                                machines_workstations[key].append(c_wk)  # 添加到这个机器中
+                                machines_workstations[max_key].remove(c_wk)  # 从原来的机器中删除
 
-    for i in range(len(individual['individual']['workstation_code'])):
-        ma = machine[i]  # 获取该工序的机器
-        for ws in individual['individual']['workstation_code'][i]:  # 遍历该工序的所有工作站
-            tem_workstation_machines[ws] = ma  # 记录工作站对应的机器
-    # print(f"!!!!!!!!!!!!!!@@@@@@@@@@@@@@")
-    # print(tem_workstation_machines)
+    print(f"————————————————————————sign")
 
-    # 更新 individual 结构 更新individual中的workstation_machines
-    individual['individual']['workstation_machines'] = tem_workstation_machines
-    # check_wk_ma2(machines_workstations,23)
-    # check_wk_ma(individual['individual']['workstation_machines'],23)
+    has_empty = any(len(v) == 0 for v in machines_workstations.values())
+    if has_empty:
+        print("是否存在空值:", has_empty)
+        raise ValueError("有空值")
+
+    # 反转键值
+    reversed_dict = {station: machine for machine, stations in machines_workstations.items() for station in stations}
+    # 按键排序
+    sorted_reversed_dict = dict(sorted(reversed_dict.items(), key=lambda x: x[0]))
+    print(f"sorted_reversed_dict{sorted_reversed_dict}")
+    individual['individual']['workstation_machines']=sorted_reversed_dict
+
+    print(f"!!!!!!!!!!!!!!@@@@@@@@@@@@@@")
+    check_wk_ma(individual['individual']['workstation_machines'],23)
     return individual,machines_workstations
 
 def choose_workstation(individual,machines_workstations):
-    print(f"888888")
+    print(f"888888choose_workstation")
     print(f"machines_workstations{machines_workstations}")
-    # check_wk_ma2(machines_workstations,23)
     # 负责选择工作站的
     # 数字范围 1 到 5
     numbers = [1, 2, 3, 4, 5]
@@ -1031,9 +1011,6 @@ def choose_workstation(individual,machines_workstations):
     # 转换为列表（按字母顺序排序）
     unique_all_machines = sorted(unique_all_workstations)
 
-
-    print(f"10391039")
-    print(f"unique_all_workstations{unique_all_workstations}")
     if len(unique_all_workstations)!=23:
         print(f"846846有问题有问题")
         print(len(unique_all_workstations))
@@ -1041,7 +1018,7 @@ def choose_workstation(individual,machines_workstations):
         raise ValueError("原本的工作站数量有问题")
 
     unique_current_workstations = sorted(set(wk for sublist in individual['individual']['workstation_code'] for wk in sublist))
-    print(f"unique_workstations{unique_current_workstations}")
+    # print(f"unique_workstations{unique_current_workstations}")
 
     if set(unique_current_workstations) == set(unique_all_workstations):
         print("两个列表的值相同（忽略顺序）")
@@ -1056,11 +1033,10 @@ def choose_workstation(individual,machines_workstations):
 
        # 获取该机器所有对应的工作站,即该机器可以选择的工作站
         valid_workstations=machines_workstations[machine_needed]
-        print(f"840840")
-        print(valid_workstations)
+        # print(f"840840")
+        print(f"valid_workstations{valid_workstations}")
         tem_valid=copy.deepcopy(valid_workstations)
-        # tem_valid=valid_workstations.deepcopy()
-
+        print(f"ws_list{ws_list}")
         # 检查并调整不对的
         for j,ws in enumerate(ws_list):
             if ws not in valid_workstations:
@@ -1068,12 +1044,18 @@ def choose_workstation(individual,machines_workstations):
                 # 有问题！！会导致有工作站未选择
                 # 在当前可选的机器中选择一个工作站
                 preferred_ws=[wk for wk in lose_wk if wk in valid_workstations]
-
+                print(f"preferred_ws{preferred_ws}")
                 if preferred_ws:
+                    # if len(preferred_ws)==1:
+                    #     new_ws=preferred_ws
+                    # else:
                     new_ws = random.choice(preferred_ws)
-                    lose_wk.remove(new_ws)
+                    # lose_wk.remove(new_ws)
                 else:
-                    new_ws=random.choice(valid_workstations)
+                    print(f"valid_workstations为空？？")
+                    if valid_workstations:
+                        print(f"valid_workstations{valid_workstations}")
+                        new_ws=random.choice(valid_workstations)
                 individual['individual']['workstation_code'][i][j]=new_ws
 
     # 通过balance去调整每个工序分配到的工作站数量
@@ -1091,7 +1073,7 @@ def choose_workstation(individual,machines_workstations):
                 workload_b.append((idx,diff))
         else:
             diff = int(len(workstation)) - int(balance)
-            print(f"该工序分配的工作站过少,相差{diff}")
+            # print(f"该工序分配的工作站过少,相差{diff}")
             # 按照概率从1-5之间选择一个数，数字越小概率越大
             # 按照权重选择一个数字
             chosen_number = random.choices(numbers, weights=weights1, k=1)[0]
@@ -1103,7 +1085,7 @@ def choose_workstation(individual,machines_workstations):
 
         # 如果存在分配工作站少了的工序
         if workload_low:
-            print(f"workload_low{workload_low}")
+            # print(f"workload_low{workload_low}")
             for idx, diff in workload_low:
                 machine_type = individual['individual']['machine_code'][idx]  # 获取该工序对应的机器类型
                 available_workstations = machines_workstations.get(machine_type, [])  # 获取该机器可用的工作站列表
@@ -1127,19 +1109,19 @@ def choose_workstation(individual,machines_workstations):
             # 说明没有工作站分配的工作站少了,但是有工作站分配多了
             # 有个问题，会不会每个工作站的人力平衡都刚刚好
             for i in lose_wk:
-                print(f"10211021")
+                # print(f"10211021")
                 for ids in workload_b:
-                    print(ids)
+                    # print(ids)
                     current_ma=individual['individual']['machine_code'][ids[0]]
-                    print(f"current_ma{current_ma}")
+                    # print(f"current_ma{current_ma}")
                     lose_wk_machine_type = machines_workstations.get(i)
-                    print(f"lose_wk_machine_type{lose_wk_machine_type}")
+                    # print(f"lose_wk_machine_type{lose_wk_machine_type}")
                     # 如果机器类型与 current_ma 相同，则添加到对应工作站的列表中
                     if lose_wk_machine_type == current_ma:
                         individual['individual']['workstation_code'][ids[0]].append(i)
                         lose_wk.remove(i)
                         # break  # 退出循环，假设只需匹配一次
-            print(f"lose_wk{lose_wk}")
+            # print(f"lose_wk{lose_wk}")
 
     # 检查是否调整完了后有工作站没有分配到
     # 如果还有未分配的工作站
@@ -1147,41 +1129,48 @@ def choose_workstation(individual,machines_workstations):
     new_unique_workstations = sorted(set(wk for sublist in individual['individual']['workstation_code'] for wk in sublist))
     print(f"new_unique_workstations{new_unique_workstations}")
     new_lose_wk=set(unique_all_workstations)-set(new_unique_workstations)
-
+    print(f"还有没有分配的工作站")
     while new_lose_wk:
-        print(f"还有没有分配的工作站")
+        # print(f"还有没有分配的工作站")
         print(f"new_lose_wk{new_lose_wk}")
-        if new_lose_wk:
-            for i in list(new_lose_wk):
-                print(f"遍历工作站{i}")
-                for ids in workload_b:
-                    current_ma = individual['individual']['machine_code'][ids[0]]
-                    print(f"current_ma{current_ma}")
-                    # lose_wk_machine_type = machines_workstations.get(i)
-                    # print(f"lose_wk_machine_type{lose_wk_machine_type}")
-                    print(f"machines_workstations{machines_workstations}")
-                    if current_ma in machines_workstations:
-                        individual['individual']['workstation_code'][ids[0]].append(i)
-                        new_lose_wk.remove(i)
-                        print(f"当前删除后的new_lose_wk{new_lose_wk}")
-                        break  # 退出循环，假设只需匹配一次
-                    else:
-                        print(f"没有找到合适机器")
+        # if new_lose_wk:
+        for i in list(new_lose_wk):
+            print(f"遍历工作站{i}")
+            for ids in workload_b:
+                current_ma = individual['individual']['machine_code'][ids[0]]
+                print(f"current_ma{current_ma}")
+                # lose_wk_machine_type = machines_workstations.get(i)
+                # print(f"lose_wk_machine_type{lose_wk_machine_type}")
+                print(f"machines_workstations{machines_workstations}")
+                if current_ma in machines_workstations:
+                    individual['individual']['workstation_code'][ids[0]].append(i)
+                    new_lose_wk.remove(i)
+                    print(f"当前删除后的new_lose_wk{new_lose_wk}")
+                    break  # 退出循环，假设只需匹配一次
+                else:
+                    raise ValueError("!!!!!!!!!!")
 
-    # 需要修改workstation_machines
-    # 存储工作站到机器的映射
-    workstation_machine_dict = {}
-    # 遍历所有工作站和对应的 machine_code
-    for wks, mc in zip(individual['individual']['workstation_code'], individual['individual']['machine_code']):
-        for wk in wks:
-            if wk in workstation_machine_dict and workstation_machine_dict[wk] != mc:
-                raise ValueError(f"工作站 {wk} 已经匹配到 {workstation_machine_dict[wk]}，但现在又匹配到 {mc}，数据冲突！")
-            workstation_machine_dict[wk] = mc  # 存储键值对
-    print(f"1184")
-    print(workstation_machine_dict)
-    individual['individual']['workstation_machines']=workstation_machine_dict
-    # check_adjust_workstation(individual['individual']['workstation_code'],23)
-    # check_wk_ma(individual['individual']['workstation_machines'],23)
+    new_unique_workstations2 = sorted( set(wk for sublist in individual['individual']['workstation_code'] for wk in sublist))
+    new_lose_wk2 = set(unique_all_workstations) - set(new_unique_workstations2)
+    if new_lose_wk2:
+        print(f"new_lose_wk2{new_lose_wk2}")
+        raise ValueError("有工作站没有分配")
+    print(f"11581158")
+    check_adjust_workstation(individual['individual']['workstation_code'],23)
+    # 不需要修改individual['individual']['workstation_machines']，因为本身就修改好了，这里只是调整工作站编码，也是根据机器来的
+
+    # # 需要修改workstation_machines
+    # # 存储工作站到机器的映射
+    # workstation_machine_dict = {}
+    # # 遍历所有工作站和对应的 machine_code
+    # for wks, mc in zip(individual['individual']['workstation_code'], individual['individual']['machine_code']):
+    #     for wk in wks:
+    #         if wk in workstation_machine_dict and workstation_machine_dict[wk] != mc:
+    #             raise ValueError(f"工作站 {wk} 已经匹配到 {workstation_machine_dict[wk]}，但现在又匹配到 {mc}，数据冲突！")
+    #         workstation_machine_dict[wk] = mc  # 存储键值对
+    #
+    # individual['individual']['workstation_machines']=workstation_machine_dict
+
     return individual
 
 
